@@ -1,0 +1,62 @@
+pipeline AirportPipeline {
+
+    AirportExtractor
+        -> AirportTextFileInterpreter;
+
+    AirportTextFileInterpreter
+        -> AirportCSVInterpreter
+        -> AirportCoreDataSelector
+        -> AirportTableInterpreter
+        -> AirportLoader;
+
+        block AirportExtractor oftype HttpExtractor {
+            url: "https://opendata.rhein-kreis-neuss.de/api/explore/v2.1/catalog/datasets/rhein-kreis-neuss-flughafen-weltweit/exports/csv?lang=en&timezone=Europe%2FBerlin&use_labels=true&delimiter=%3B";
+        }   
+        // The HttpExtractor requires no input and produces a binary file as output.
+        // This file has to be interpreted, e.g., as text file.
+        block AirportTextFileInterpreter oftype TextFileInterpreter { }
+
+        // Next, we interpret the text file as sheet.
+        // A sheet only contains text cells and is useful for manipulating the shape of data before assigning more strict value types to cells.
+        block AirportCSVInterpreter oftype CSVInterpreter {
+            enclosing: '';
+            delimiter: ';';
+        }
+
+         block AirportCoreDataSelector oftype CellRangeSelector {
+          select: range A1:I*;
+        }
+        
+        // we interpret the sheet as a table by adding structure.
+        // We define a value type per column that specifies the data type of the column.
+        // Rows that include values that are not valid according to the their value types are dropped automatically. 
+        block AirportTableInterpreter oftype TableInterpreter {
+            header: true;
+            columns: [
+                "Lfd. Nummer" oftype integer,
+                "Name des Flughafens" oftype text,
+                "Ort" oftype text,
+                "Land" oftype text,
+                "IATA" oftype text,
+                "ICAO" oftype text,
+                "Latitude" oftype decimal,
+                "Longitude" oftype decimal,
+                "Altitude" oftype integer
+            ];
+        }
+
+        // As a last step, we load the table into a sink,
+        // here into a sqlite file.
+        // The structural information of the table is used
+        // to generate the correct table.
+        block AirportLoader oftype SQLiteLoader {
+            table: "airports"; 
+            file: "./airports.sqlite"; 
+            }
+}
+
+
+
+
+        
+        
