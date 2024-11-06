@@ -1,0 +1,93 @@
+pipeline CityPlanting {
+
+    PlantingExtractor
+        -> PlantingTextFileInterpreter;
+
+    PlantingTextFileInterpreter
+        -> PlantingCSVInterpreter
+        -> PlantingDeleter
+        -> PlantingTableInterpreter
+        -> PlantingLoader;
+
+        block PlantingExtractor oftype HttpExtractor {
+            url: "https://opendata.rhein-kreis-neuss.de/api/v2/catalog/datasets/stadt-neuss-herbstpflanzung-2023/exports/csv";}  
+
+        // The HttpExtractor requires no input and produces a binary file as output.
+        // This file has to be interpreted, e.g., as text file.
+        block PlantingTextFileInterpreter oftype TextFileInterpreter { }
+
+        // Next, we interpret the text file as sheet.
+        // A sheet only contains text cells and is useful for manipulating the shape of data before assigning more strict value types to cells.
+        block PlantingCSVInterpreter oftype CSVInterpreter {
+            enclosing: '';
+            delimiter: ';';
+        }
+
+        block PlantingDeleter oftype ColumnDeleter {
+            delete: [column E];
+        }
+
+        // we interpret the sheet as a table by adding structure.
+        // We define a value type per column that specifies the data type of the column.
+        // Rows that include values that are not valid according to the their value types are dropped automatically. 
+        block PlantingTableInterpreter oftype TableInterpreter {
+            header: true;
+            columns: [
+                "lfd_nr" oftype integer,
+                "stadtteil" oftype VogelsangStadtteil,
+                "standort" oftype text,
+                "baumart_botanisch" oftype text,
+                //"id" oftype PlantingGeoCoordinate,
+                "id" oftype text,
+                "baumfamilie" oftype text
+            ];
+        }
+        
+        transform GeoFormat {
+        from Rawcoordinate oftype text;
+        to Geocoordinate oftype text;
+
+        //Geocoordinate: Rawcoordinate Rawcoordinate matches /\\d{1,3}\\.\\d+,\\s*\\d{1,3}\\.\\d+/ ? Rawcoordinate : null;
+        Geocoordinate: Rawcoordinate replace /(\\d{1,3}\\.\\d+),\\s*(\\d{1,3}\\.\\d+)/ with "{$1}, {$2}";
+        }
+
+        block GeoFormatTransformer oftype TableTransformer {
+        inputColumns: ['id'];
+        outputColumn: 'id';
+        uses: GeoFormat;
+        }
+
+
+        // As a last step, we load the table into a sink,
+        // here into a sqlite file.
+        // The structural information of the table is used
+        // to generate the correct table.
+        block PlantingLoader oftype SQLiteLoader {
+            table: "trees"; 
+            file: "./trees.sqlite"; 
+        }
+        
+        // 9. Below the pipeline, we model user-define value types.
+        // We give them a speaking name and provide a base value type
+        // that this value type builts on. User-defined value types always place additional constraints on existing value types.
+        valuetype VogelsangStadtteil oftype text {
+        // 10. Value types can be further refined by providing constraints.
+            constraints: [
+                VogelsangOnly
+            ];
+        }
+
+        //valuetype PlantingGeoCoordinate oftype text {
+        //    constraints: [ 
+        //        NumberAndSeperate 
+        //    ];
+        //}
+
+        // 11. This constraint works on text value types and requires values 
+        // to match a given regular expression in order to be valid.
+        constraint VogelsangOnly on text: value matches /^Vogelsang.*/;
+        //constraint NumberAndSeperate on text: value matches /\\d{1,3}\\.\\d+,\\s*\\d{1,3}\\.\\d+/;
+        //constraint NumberAndSeperate on text: value matches /\\d{1,3}\\.\\d+,\\s\\d{1,3}\\.\\d+/;
+
+
+}
