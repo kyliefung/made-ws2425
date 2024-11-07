@@ -22,25 +22,25 @@ By analysing data on gun ownership and crime statistics from both countries, thi
 ### Datasource1: United Status - State-Level Estimates of Household Firearm Ownership
 * Metadata URL: https://www.rand.org/pubs/tools/TL354.html
 * Data Type: CSV
-Description: 
+* Description: 
 The official data source is from independent and nonprofit organization. It provides annual, state-level estimates of household firearm ownership from 1980 to 2016, which includes the data of household firearm ownership in US, firearm Suicide and other details. 
 
 ### Datasource2: United Status - Centers for Disease Control and Prevention (CDC) - National Center for Health Statistics
 * Metadata URL: https://cde.ucr.cjis.gov/LATEST/webapp/#/pages/explorer/crime/crime-trend
 * Data Type: CSV
-Description: 
+* Description: 
 The official data source is from the FBI. On the website, it provides various characteristics of crime details, such as violent offenses, offender vs. victim demographics, and the type of weapon involved by offense, which can help reflect the relationship between firearms and crime causes.
 
 ### Datasource3: Germany - Number of Weapons Register
-* TODO: Metadata URL: https://www.statista.com/statistics/1372482/weapons-owners-number-germany/
-* TODO: Data Type: Excel 
-Description: 
+* Metadata URL: https://www.statista.com/statistics/1372482/weapons-owners-number-germany/
+* Data Type: Excel 
+* Description: 
 The official data source is Statista. The data provides information on the number of firearms, firearm owners, and firearm certificates in Germany in 2023, according to the National Weapons Register, which provides the basic foundation for estimating the number of firearm owners.
 
 ### Datasource4: Germany - Police Crime Statistics (Polizeiliche Kriminalstatistik)
-* TODO: Metadata URL: https://www.bka.de/EN/CurrentInformation/Statistics/PoliceCrimeStatistics/policecrimestatistics_node.html
-* TODO: Data Type: Excel
-Description: 
+* Metadata URL: https://www.bka.de/EN/CurrentInformation/Statistics/PoliceCrimeStatistics/policecrimestatistics_node.html
+* Data Type: Excel
+* Description: 
 The official data source is the Federal Criminal Police Office (Bundeskriminalamt, BKA). The website covers Police Crime Statistics from 2014 to 2023. The data is divided into offense categories, including firearm-related cases.
 
 
