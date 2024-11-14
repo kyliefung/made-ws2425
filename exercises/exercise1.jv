@@ -23,7 +23,7 @@ pipeline AirportPipeline {
             delimiter: ';';
         }
 
-         block AirportCoreDataSelector oftype CellRangeSelector {
+        block AirportCoreDataSelector oftype CellRangeSelector {
           select: range A1:I*;
         }
         
