@@ -6,14 +6,8 @@ pipeline GovBondPipeline {
         -> GovBondDataSelector
         -> NameHeaderWriter
         -> GovBondCellsTableInterpreter
-    
-        -> bondIssuanceCellsLoader;
+        -> BondIssuanceLoader;    
 
-    //GovBondTextFileInterpreter
-        //-> GovBondCSVInterpreter
-        //-> GovBondDeleter
-        //-> GovBondTableInterpreter
-        //-> GovBondLoader;
 
         block GovBondExtractor oftype HttpExtractor {
             url: "https://thedocs.worldbank.org/en/doc/7d852628d96b9411d43e5d36d5dff941-0050062022/original/Graphs-Chapter-5-02082022.xlsx";}  
@@ -61,19 +55,17 @@ pipeline GovBondPipeline {
 
         // One table “bondIssuance”, containing the data about bond issuance share 
         // (columns "Country Code" and "Bond Issuance Share")
-        block bondIssuanceCellsLoader oftype SQLiteLoader {
-            inputColumns: ["Country Code", "Bond Issuance Share"];
+        block BondIssuanceLoader oftype SQLiteLoader {
             table: "bondIssuance";
             file: "./country-stats.sqlite";
         }
 
         // One table “gdpPerCapita”, containing the data about GDP per capita 
         // (columns "Country Code" and "GDP per Capita")
-        block gdpPerCapitaCellsLoader oftype SQLiteLoader {
-            inputColumns: ["Country Code", "GDP per Capita"];
-            table: "gdpPerCapita";
-            file: "./country-stats.sqlite";
-        }
+        //block gdpPerCapitaCellsLoader oftype SQLiteLoader {
+        //    table: "gdpPerCapita";
+        //    file: "./country-stats.sqlite";
+        //}
 
         // "Country Code" must be a valid ISO 3166-1 alpha-3 country code (must not be empty)
         // valuetype CountryCode oftype CountryCodeAlpha3;
