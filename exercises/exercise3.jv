@@ -1,16 +1,16 @@
-pipeline GovBondPipeline {
+pipeline GovPipeline {
 
-    GovBondExtractor
-        -> GovBondTextXLSXInterpreter
-        -> GovBondCellsSheetpicker
-        -> NameHeaderWriter
-        -> GovBondDataSelector
-        -> GovBondCellsTableInterpreter
-        -> BondIssuanceLoader;
-        
-    GovBondCellsTableInterpreter
-        -> gdpPerCapitaCellsLoader;
+        GovBondExtractor
+            -> GovBondTextXLSXInterpreter
+            -> GovBondCellsSheetpicker
+            -> NameHeaderWriter
+            -> GovBondDataSelector
+            -> GovBondCellsTableInterpreter
+            -> BondIssuanceLoader;
 
+        GovBondDataSelector
+            -> GDPCellsTableInterpreter
+            -> gdpPerCapitaCellsLoader;
 
         block GovBondExtractor oftype HttpExtractor {
             url: "https://thedocs.worldbank.org/en/doc/7d852628d96b9411d43e5d36d5dff941-0050062022/original/Graphs-Chapter-5-02082022.xlsx";}  
@@ -38,6 +38,7 @@ pipeline GovBondPipeline {
             "Bond Issuance Share"
             ];
         }
+
         // Ignore the figure itself and only keep the table with actual data (from cell P2 to S45)
         block GovBondDataSelector oftype CellRangeSelector {
         select: range P2:S45;
@@ -49,27 +50,32 @@ pipeline GovBondPipeline {
             header: true;
             columns: [
             "Country Code" oftype CountryCodeAlpha3,
-            "Economy" oftype text,
-            "GDP per Capita" oftype NonEmptyPositiveDecimal,
             "Bond Issuance Share" oftype RangeDecimal,
             ];
         }
 
-
+        block GDPCellsTableInterpreter oftype TableInterpreter {
+            header: true;
+            columns: [
+            "Country Code" oftype CountryCodeAlpha3,
+            "GDP per Capita" oftype NonEmptyPositiveDecimal,
+            ];
+        }
         // One table “bondIssuance”, containing the data about bond issuance share 
         // (columns "Country Code" and "Bond Issuance Share")
-        constraint BondIssuancelist oftype AllowlistConstraint {
-            allowlist: ["Country Code", "Bond Issuance Share"];
-        }
+        //constraint BondIssuancelist oftype AllowlistConstraint {
+        //    allowlist: ["Country Code", "Bond Issuance Share"];
+        //}
 
         block BondIssuanceLoader oftype SQLiteLoader {
             table: "bondIssuance";
             file: "./country-stats.sqlite";
         }
 
-        constraint gdpPerCapitalist oftype AllowlistConstraint {
-            allowlist: ["Country Code", "GDP per Capita"];
-        }
+        //constraint gdpPerCapitalist oftype AllowlistConstraint {
+        //    allowlist: ["Country Code", "GDP per Capita"];
+        //}
+    // Transformer to select the columns for the "gdpPerCapita" table
 
         // One table “gdpPerCapita”, containing the data about GDP per capita 
         // (columns "Country Code" and "GDP per Capita")
