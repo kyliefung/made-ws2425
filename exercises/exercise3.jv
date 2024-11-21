@@ -3,10 +3,13 @@ pipeline GovBondPipeline {
     GovBondExtractor
         -> GovBondTextXLSXInterpreter
         -> GovBondCellsSheetpicker
-        -> GovBondDataSelector
         -> NameHeaderWriter
+        -> GovBondDataSelector
         -> GovBondCellsTableInterpreter
-        -> BondIssuanceLoader;    
+        -> BondIssuanceLoader;
+        
+    GovBondCellsTableInterpreter
+        -> gdpPerCapitaCellsLoader;
 
 
         block GovBondExtractor oftype HttpExtractor {
@@ -23,11 +26,6 @@ pipeline GovBondPipeline {
             sheetName: 'Figure S5.1.2';
         }
 
-        // Ignore the figure itself and only keep the table with actual data (from cell P2 to S45)
-        block GovBondDataSelector oftype CellRangeSelector {
-        select: range P2:S45;
-        }
-
         // Rename header columns: “ISO3” to "Country Code", “GDP per capita (US$, thousands)” 
         // to "GDP per Capita", “Share of government sustainable bonds" to "Bond Issuance Share"
         // “Economy” does not have to be renamed
@@ -37,8 +35,12 @@ pipeline GovBondPipeline {
             "Country Code",
             "Economy",
             "GDP per Capita",
-            "Bond Issuance Share",
+            "Bond Issuance Share"
             ];
+        }
+        // Ignore the figure itself and only keep the table with actual data (from cell P2 to S45)
+        block GovBondDataSelector oftype CellRangeSelector {
+        select: range P2:S45;
         }
 
         // Assign fitting built-in SQLite types (e.g., BIGINT, TEXT or FLOAT) to all columns
@@ -53,19 +55,28 @@ pipeline GovBondPipeline {
             ];
         }
 
+
         // One table “bondIssuance”, containing the data about bond issuance share 
         // (columns "Country Code" and "Bond Issuance Share")
+        constraint BondIssuancelist oftype AllowlistConstraint {
+            allowlist: ["Country Code", "Bond Issuance Share"];
+        }
+
         block BondIssuanceLoader oftype SQLiteLoader {
             table: "bondIssuance";
             file: "./country-stats.sqlite";
         }
 
+        constraint gdpPerCapitalist oftype AllowlistConstraint {
+            allowlist: ["Country Code", "GDP per Capita"];
+        }
+
         // One table “gdpPerCapita”, containing the data about GDP per capita 
         // (columns "Country Code" and "GDP per Capita")
-        //block gdpPerCapitaCellsLoader oftype SQLiteLoader {
-        //    table: "gdpPerCapita";
-        //    file: "./country-stats.sqlite";
-        //}
+        block gdpPerCapitaCellsLoader oftype SQLiteLoader {
+            table: "gdpPerCapita";
+            file: "./country-stats.sqlite";
+        }
 
         // "Country Code" must be a valid ISO 3166-1 alpha-3 country code (must not be empty)
         // valuetype CountryCode oftype CountryCodeAlpha3;
