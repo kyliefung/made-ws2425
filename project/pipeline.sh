@@ -7,5 +7,7 @@
 # selenium
 # beautifulsoup4
 
+# Besides, You will also need Google Chrome and ChromeDriver for Selenium. 
+
 #!/bin/bash
 python3 project/Data-Pipeline.py

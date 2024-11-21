@@ -1,0 +1,96 @@
+pipeline GovBondPipeline {
+
+    GovBondExtractor
+        -> GovBondTextXLSXInterpreter
+        -> GovBondCellsSheetpicker
+        -> GovBondDataSelector
+        -> NameHeaderWriter
+        -> GovBondCellsTableInterpreter
+    
+        -> bondIssuanceCellsLoader;
+
+    //GovBondTextFileInterpreter
+        //-> GovBondCSVInterpreter
+        //-> GovBondDeleter
+        //-> GovBondTableInterpreter
+        //-> GovBondLoader;
+
+        block GovBondExtractor oftype HttpExtractor {
+            url: "https://thedocs.worldbank.org/en/doc/7d852628d96b9411d43e5d36d5dff941-0050062022/original/Graphs-Chapter-5-02082022.xlsx";}  
+        
+        // 3. The incoming file is interpreted as a XLSX file and transformed into a Workbook
+        // Workbooks contain at least 1 Sheet. Every sheet has a unique name. 
+        block GovBondTextXLSXInterpreter oftype XLSXInterpreter { }
+
+        // 4.1 Here, we pick one sheet with the name 'RefractiveIndexSi GaAs' from the Workbook to use within our pipeline. 
+        // The output type from SheetPicker is Sheet, which was already introduced in the cars example
+        // Extract the sheet called “Figure S5.1.2” from the Excel file
+        block GovBondCellsSheetpicker oftype SheetPicker {
+            sheetName: 'Figure S5.1.2';
+        }
+
+        // Ignore the figure itself and only keep the table with actual data (from cell P2 to S45)
+        block GovBondDataSelector oftype CellRangeSelector {
+        select: range P2:S45;
+        }
+
+        // Rename header columns: “ISO3” to "Country Code", “GDP per capita (US$, thousands)” 
+        // to "GDP per Capita", “Share of government sustainable bonds" to "Bond Issuance Share"
+        // “Economy” does not have to be renamed
+        block NameHeaderWriter oftype CellWriter {
+            at: range P2:S2;
+            write: [
+            "Country Code",
+            "Economy",
+            "GDP per Capita",
+            "Bond Issuance Share",
+            ];
+        }
+
+        // Assign fitting built-in SQLite types (e.g., BIGINT, TEXT or FLOAT) to all columns
+        // "Country Code" must be a valid ISO 3166-1 alpha-3 country code (must not be empty)
+        block GovBondCellsTableInterpreter oftype TableInterpreter {
+            header: true;
+            columns: [
+            "Country Code" oftype CountryCodeAlpha3,
+            "Economy" oftype text,
+            "GDP per Capita" oftype NonEmptyPositiveDecimal,
+            "Bond Issuance Share" oftype RangeDecimal,
+            ];
+        }
+
+        // One table “bondIssuance”, containing the data about bond issuance share 
+        // (columns "Country Code" and "Bond Issuance Share")
+        block bondIssuanceCellsLoader oftype SQLiteLoader {
+            inputColumns: ["Country Code", "Bond Issuance Share"];
+            table: "bondIssuance";
+            file: "./country-stats.sqlite";
+        }
+
+        // One table “gdpPerCapita”, containing the data about GDP per capita 
+        // (columns "Country Code" and "GDP per Capita")
+        block gdpPerCapitaCellsLoader oftype SQLiteLoader {
+            inputColumns: ["Country Code", "GDP per Capita"];
+            table: "gdpPerCapita";
+            file: "./country-stats.sqlite";
+        }
+
+        // "Country Code" must be a valid ISO 3166-1 alpha-3 country code (must not be empty)
+        // valuetype CountryCode oftype CountryCodeAlpha3;
+
+        // "GDP per Capita" must be a positive decimal (must not be empty)
+        valuetype NonEmptyPositiveDecimal oftype decimal {
+            constraints: [ PositiveDecimal ];
+        }
+        // "Bond Issuance Share" must be a decimal between 0 and 1 (both values included, must not be empty)
+        valuetype RangeDecimal oftype decimal {
+            constraints: [ ZeroAndOne ];
+        }
+
+        // "GDP per Capita" must be a positive decimal (must not be empty)
+        constraint PositiveDecimal on decimal: value > 0;
+                
+        // "Bond Issuance Share" must be a decimal between 0 and 1 (both values included, must not be empty)
+        constraint ZeroAndOne on decimal: value >= 0 and value <= 1;
+
+}
