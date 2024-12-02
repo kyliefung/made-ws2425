@@ -61,7 +61,7 @@ pipeline DataPipeline {
                 "id" oftype OverZeroDecimal,
                 "producer" oftype text,
                 "model" oftype text,
-                "month" oftype integer,
+                "month" oftype OneToTwelveMonth,
                 "temperature" oftype decimal,
                 "battery_temperature" oftype decimal
             ];
@@ -100,7 +100,19 @@ pipeline DataPipeline {
         valuetype OverZeroDecimal oftype decimal {
             constraints: [ PositiveDecimal ];
         }
+        
+        valuetype OneToTwelveMonth oftype integer {
+            constraints:[JantoDecMonth];
+        }
           
         constraint PositiveDecimal on decimal: value > 0;
+
+        // Validate data: Use validations as you see fit, e.g., Month should be a range of 1 - 12
+        constraint JantoDecMonth oftype RangeConstraint {
+            lowerBound: 1;
+            lowerBoundInclusive: true;
+            upperBound: 12;
+            upperBoundInclusive: true;
+        }
 
 }
