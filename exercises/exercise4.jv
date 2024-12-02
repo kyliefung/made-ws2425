@@ -5,9 +5,8 @@ pipeline DataPipeline {
             -> CSVFilePicker
             -> DataTextFileInterpreter
             -> DataCSVInterpreter
-            -> DataSelector
             -> NameHeaderWriter
-            -> BatterieHeaderWriter
+            -> BattHeaderWriter
             -> DataTableInterpreter
             -> BattTempTransformer
             -> TempTransformer
@@ -33,14 +32,9 @@ pipeline DataPipeline {
                 // Next, we interpret the text file as sheet.
         // A sheet only contains text cells and is useful for manipulating the shape of data before assigning more strict value types to cells.
         block DataCSVInterpreter oftype CSVInterpreter {
-            enclosing: '';
             delimiter: ';';
         }
 
-        // Reshape data: Only use the columns "Geraet", "Hersteller", "Model", "Monat", "Temperatur in °C (DWD)", "Batterietemperatur in °C"
-        block DataSelector oftype CellRangeSelector {
-            select: range A1:E1;
-        }
         // Translate/rename column headers from German to English:
         block NameHeaderWriter oftype CellWriter {
             at: range A1:E1;
@@ -52,12 +46,12 @@ pipeline DataPipeline {
             "temperature",
             ];
         }
-        
-        // Translate/rename column headers from German to English: “Batterietemperatur in °C” to “battery_temperature”
-        block BatterieHeaderWriter oftype CellWriter {
+
+        // Translate/rename column headers from German to English:
+        block BattHeaderWriter oftype CellWriter {
             at: cell J1;
             write: [
-            "battery_temperature",
+            "battery_temperature"
             ];
         }
 
