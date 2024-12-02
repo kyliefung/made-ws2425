@@ -1,0 +1,112 @@
+pipeline DataPipeline {
+
+        DataExtractor
+            -> DataZipXInterpreter
+            -> CSVFilePicker
+            -> DataTextFileInterpreter
+            -> DataCSVInterpreter
+            -> DataSelector
+            -> NameHeaderWriter
+            -> BatterieHeaderWriter
+            -> DataTableInterpreter
+            -> BattTempTransformer
+            -> TempTransformer
+            -> TempLoader;
+
+        block DataExtractor oftype HttpExtractor {
+            url: "https://www.mowesta.com/data/measure/mowesta-dataset-20221107.zip";}  
+        
+        // unzip data
+        block DataZipXInterpreter oftype ArchiveInterpreter { 
+            archiveType: "zip";
+        }
+
+        // Choose data.csv file
+        block CSVFilePicker oftype FilePicker {
+            path: "/data.csv";
+        }
+
+        // The HttpExtractor requires no input and produces a binary file as output.
+        // This file has to be interpreted, e.g., as text file.
+        block DataTextFileInterpreter oftype TextFileInterpreter { }
+
+                // Next, we interpret the text file as sheet.
+        // A sheet only contains text cells and is useful for manipulating the shape of data before assigning more strict value types to cells.
+        block DataCSVInterpreter oftype CSVInterpreter {
+            enclosing: '';
+            delimiter: ';';
+        }
+
+        // Reshape data: Only use the columns "Geraet", "Hersteller", "Model", "Monat", "Temperatur in °C (DWD)", "Batterietemperatur in °C"
+        block DataSelector oftype CellRangeSelector {
+            select: range A1:E1;
+        }
+        // Translate/rename column headers from German to English:
+        block NameHeaderWriter oftype CellWriter {
+            at: range A1:E1;
+            write: [
+            "id",
+            "producer",
+            "model",
+            "month",
+            "temperature",
+            ];
+        }
+        
+        // Translate/rename column headers from German to English: “Batterietemperatur in °C” to “battery_temperature”
+        block BatterieHeaderWriter oftype CellWriter {
+            at: cell J1;
+            write: [
+            "battery_temperature",
+            ];
+        }
+
+        block DataTableInterpreter oftype TableInterpreter {
+            header: true;
+            columns: [
+                "id" oftype OverZeroDecimal,
+                "producer" oftype text,
+                "model" oftype text,
+                "month" oftype integer,
+                "temperature" oftype decimal,
+                "battery_temperature" oftype decimal
+            ];
+        }
+
+        block BattTempTransformer oftype TableTransformer {
+            inputColumns: [
+            "battery_temperature"
+            ];
+            outputColumn: "battery_temperature";
+            uses: CelsiusToFahrenheit;
+        }
+
+        block TempTransformer oftype TableTransformer {
+            inputColumns: [
+            "temperature"
+            ];
+            outputColumn: "temperature";
+            uses: CelsiusToFahrenheit;
+        }
+
+        transform CelsiusToFahrenheit {
+            from tempCelsius oftype decimal;
+            to tempFahrenheit oftype decimal;
+
+            tempFahrenheit: (tempCelsius * 9/5) + 32;
+        }
+
+        // Write data into a SQLite database called “temperatures.sqlite”, in the table “temperatures”
+        block TempLoader oftype SQLiteLoader {
+            table: "temperatures";
+            file: "./country-stats.sqlite";
+        }
+
+        // Validate data: Use validations as you see fit, e.g., for “Geraet” to be an id over 0
+        valuetype OverZeroDecimal oftype decimal {
+            constraints: [ PositiveDecimal ];
+        }
+          
+        constraint PositiveDecimal on decimal: value >= 0;
+
+}
