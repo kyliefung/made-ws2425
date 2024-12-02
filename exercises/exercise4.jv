@@ -93,7 +93,7 @@ pipeline DataPipeline {
         // Write data into a SQLite database called “temperatures.sqlite”, in the table “temperatures”
         block TempLoader oftype SQLiteLoader {
             table: "temperatures";
-            file: "./country-stats.sqlite";
+            file: "./temperatures.sqlite";
         }
 
         // Validate data: Use validations as you see fit, e.g., for “Geraet” to be an id over 0
@@ -101,6 +101,6 @@ pipeline DataPipeline {
             constraints: [ PositiveDecimal ];
         }
           
-        constraint PositiveDecimal on decimal: value >= 0;
+        constraint PositiveDecimal on decimal: value > 0;
 
 }
