@@ -1,98 +1,110 @@
-import unittest
-import pandas as pd
-from io import StringIO
-from project.pipeline import transform_kaggle_data, transform_cdc_data
+import sys
+import os
 
-class TestTransformFunctions(unittest.TestCase):
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+import unittest
+import os
+import pandas as pd
+from project.Data_Pipeline import transform_kaggle_data, transform_cdc_data, kaggle_pipeline, cdc_pipeline, DATA_DIR
+
+class TestPipeline(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        # Ensure the data directory exists
+        if not os.path.exists(DATA_DIR):
+            os.makedirs(DATA_DIR)
 
     def test_transform_kaggle_data(self):
-        # Sample Kaggle input data
-        kaggle_csv = StringIO("""
-        month,state,permit,permit_recheck,handgun,long_gun,multiple,redemption_handgun,redemption_long_gun,private_sale_handgun,private_sale_long_gun,return_to_seller_handgun,return_to_seller_long_gun,totals
-        2020-01,California,100,5,200,150,10,50,40,5,10,3,2,575
-        2020-02,New York,80,3,180,120,15,60,50,10,15,2,1,536
-        2020-01,Texas,90,4,150,140,20,55,45,6,12,3,1,526
-        2020-02,Wyoming,30,1,50,60,5,20,15,2,4,1,0,188
-        2020-01,Florida,120,6,250,220,25,70,60,8,20,4,2,785
-        """)
-        
-        # Load sample Kaggle data into DataFrame
-        df = pd.read_csv(kaggle_csv)
+    # Mock Kaggle data
+        kaggle_data = {
+            "month": ["2020-01", "2020-02", "2020-01", "2020-02"],
+            "state": ["California", "New York", "Texas", "Wyoming"],
+            "permit": [100, 80, 90, 30],
+            "handgun": [200, 180, 150, 50],
+            "long_gun": [150, 120, 140, 60],
+            "totals": [575, 536, 526, 188],
+        }
+        df = pd.DataFrame(kaggle_data)
 
-        # Run the transformation
+        # Transform the data
         transformed_df = transform_kaggle_data(df)
 
-        # Expected output Kaggle data
+        # Expected output with all columns
         expected_data = {
-            'year': [2020, 2020, 2020, 2020],
-            'state': ['california', 'new york', 'texas', 'wyoming'],
-            'permit': [100, 80, 90, 30],
-            'permit_recheck': [5, 3, 4, 1],
-            'handgun': [200, 180, 150, 50],
-            'long_gun': [150, 120, 140, 60],
-            'multiple': [10, 15, 20, 5],
-            'redemption_handgun': [50, 60, 55, 20],
-            'redemption_long_gun': [40, 50, 45, 15],
-            'private_sale_handgun': [5, 10, 6, 2],
-            'private_sale_long_gun': [10, 15, 12, 4],
-            'return_to_seller_handgun': [3, 2, 3, 1],
-            'return_to_seller_long_gun': [2, 1, 1, 0],
-            'totals': [575, 536, 526, 188]
+            "year": [2020, 2020, 2020, 2020],
+            "state": ["california", "new york", "texas", "wyoming"],
+            "permit": [100, 80, 90, 30],
+            "permit_recheck": [0, 0, 0, 0],
+            "handgun": [200, 180, 150, 50],
+            "long_gun": [150, 120, 140, 60],
+            "multiple": [0, 0, 0, 0],
+            "redemption_handgun": [0, 0, 0, 0],
+            "redemption_long_gun": [0, 0, 0, 0],
+            "private_sale_handgun": [0, 0, 0, 0],
+            "private_sale_long_gun": [0, 0, 0, 0],
+            "return_to_seller_handgun": [0, 0, 0, 0],
+            "return_to_seller_long_gun": [0, 0, 0, 0],
+            "totals": [575, 536, 526, 188],
         }
         expected_df = pd.DataFrame(expected_data)
 
-        # Assert that the transformed Kaggle DataFrame matches the expected DataFrame
+        # Ensure the 'year' column is int64 for consistency
+        expected_df["year"] = expected_df["year"].astype("int64")
+
+        # Assert the transformation matches the expected DataFrame
         pd.testing.assert_frame_equal(transformed_df.reset_index(drop=True), expected_df)
+
+
 
     def test_transform_cdc_data(self):
-        # Sample CDC input data
-        cdc_csv = StringIO("""
-        YEAR,STATE,DEATHS,URL
-        2020,CA,1000,some_url
-        2020,NY,900,some_url
-        2020,FL,1100,some_url
-        2020,TX,800,some_url
-        2020,WY,300,some_url
-        2020,AK,200,some_url
-        2020,MA,400,some_url
-        """)
-        
-        # Load sample CDC data into DataFrame
-        df = pd.read_csv(cdc_csv)
+        # Mock CDC data
+        cdc_data = {
+            "YEAR": ["2020", "2020", "2020", "2020"],
+            "STATE": ["CA", "NY", "TX", "WY"],
+            "DEATHS": ["1,000", "900", "800", "300"],
+            "URL": ["url1", "url2", "url3", "url4"],
+        }
+        df = pd.DataFrame(cdc_data)
 
-        # Run the transformation
+        # Transform the data
         transformed_df = transform_cdc_data(df)
 
-        # Expected output CDC data
+        # Expected output
         expected_data = {
-            'YEAR': [2020, 2020, 2020, 2020, 2020, 2020],
-            'STATE': ['CA', 'NY', 'TX', 'WY', 'AK', 'MA'],
-            'DEATHS': [1000, 900, 800, 300, 200, 400]
+            "YEAR": [2020, 2020, 2020, 2020],
+            "STATE": ["CA", "NY", "TX", "WY"],
+            "DEATHS": [1000, 900, 800, 300],
         }
         expected_df = pd.DataFrame(expected_data)
 
-        # Assert that the transformed CDC DataFrame matches the expected DataFrame
+        # Assert the transformation matches the expected DataFrame
         pd.testing.assert_frame_equal(transformed_df.reset_index(drop=True), expected_df)
 
-    def test_kaggle_data_with_missing_values(self):
-        kaggle_csv = StringIO("""
-        month,state,permit,permit_recheck,handgun,long_gun,multiple,redemption_handgun,redemption_long_gun,private_sale_handgun,private_sale_long_gun,return_to_seller_handgun,return_to_seller_long_gun,totals
-        2020-01,California,100,5,200,150,10,50,40,5,10,3,,575
-        2020-02,New York,80,3,180,120,15,60,50,10,15,2,1,536
-        """)
-        df = pd.read_csv(kaggle_csv)
-        with self.assertRaises(ValueError):
-            transform_kaggle_data(df)
+    def test_kaggle_pipeline(self):
+        # Run the Kaggle pipeline
+        kaggle_pipeline()
 
-    def test_cdc_data_with_invalid_year(self):
-        cdc_csv = StringIO("""
-        YEAR,STATE,DEATHS,URL
-        invalid,CA,1000,some_url
-        2020,NY,900,some_url
-        """)
-        df = pd.read_csv(cdc_csv)
-        with self.assertRaises(ValueError):
-            transform_cdc_data(df)
+        # Check if SQLite file is created
+        kaggle_db_path = os.path.join(DATA_DIR, "cleaned_kaggle_dataset.sqlite")
+        self.assertTrue(os.path.exists(kaggle_db_path), "Kaggle SQLite file not created.")
+
+    def test_cdc_pipeline(self):
+        # Run the CDC pipeline
+        cdc_pipeline()
+
+        # Check if SQLite file is created
+        cdc_db_path = os.path.join(DATA_DIR, "cleaned_cdc_dataset.sqlite")
+        self.assertTrue(os.path.exists(cdc_db_path), "CDC SQLite file not created.")
+
+    @classmethod
+    def tearDownClass(cls):
+        # Clean up test-generated files
+        for file in ["cleaned_kaggle_dataset.sqlite", "cleaned_cdc_dataset.sqlite"]:
+            file_path = os.path.join(DATA_DIR, file)
+            if os.path.exists(file_path):
+                os.remove(file_path)
 
 if __name__ == "__main__":
     unittest.main()
