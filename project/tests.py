@@ -4,7 +4,6 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import unittest
-import os
 import pandas as pd
 from project.Data_Pipeline import transform_kaggle_data, transform_cdc_data, kaggle_pipeline, cdc_pipeline, DATA_DIR
 
@@ -34,7 +33,7 @@ class TestPipeline(unittest.TestCase):
         # Expected output with all columns
         expected_data = {
             "year": [2020, 2020, 2020, 2020],
-            "state": ["california", "new york", "texas", "wyoming"],
+            "state": ["california", "new york", "texas", "wyoming"],  # Lowercase states
             "permit": [100, 80, 90, 30],
             "permit_recheck": [0, 0, 0, 0],
             "handgun": [200, 180, 150, 50],
@@ -55,8 +54,6 @@ class TestPipeline(unittest.TestCase):
 
         # Assert the transformation matches the expected DataFrame
         pd.testing.assert_frame_equal(transformed_df.reset_index(drop=True), expected_df)
-
-
 
     def test_transform_cdc_data(self):
         # Mock CDC data
