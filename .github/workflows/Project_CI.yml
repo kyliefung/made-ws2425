@@ -45,7 +45,7 @@ jobs:
           chmod +x project/tests.sh
           ./project/tests.sh
 
-      # Upload test results 
+      # Upload test results & Prevent empty artifact warnings
       # If all else fails, comment out the actual test invocation in 
       # your test.sh (with an explanation why) but still set up a GitHub action
       - name: Archive test artifacts
@@ -54,4 +54,5 @@ jobs:
         with:
           name: test-logs
           path: ./test-results/
+          if-no-files-found: ignore
 
