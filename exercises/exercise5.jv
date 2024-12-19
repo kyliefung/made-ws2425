@@ -1,0 +1,77 @@
+pipeline GTFSPipeline {
+
+        GTFSExtractor
+            -> GTFSZipXInterpreter
+            -> StopFilePicker
+            -> StopTextFileInterpreter
+            -> GTFSCSVInterpreter
+            -> GTFSTableInterpreter
+            -> GTFSLoader;
+
+        block GTFSExtractor oftype HttpExtractor {
+            url: "https://gtfs.rhoenenergie-bus.de/GTFS.zip";}  
+        
+        // unzip data
+        block GTFSZipXInterpreter oftype ArchiveInterpreter { 
+            archiveType: "zip";
+        }
+
+        // Pick out only stops (from stops.txt)
+        block StopFilePicker oftype FilePicker {
+            path: "./stops.txt";
+        }
+
+        // The HttpExtractor requires no input and produces a binary file as output.
+        // This file has to be interpreted, e.g., as text file.
+        // Work with domain-specific GTFS data
+        block StopTextFileInterpreter oftype TextFileInterpreter {
+            encoding: "utf8";
+        }
+
+        // CSV Interpreter
+	    block GTFSCSVInterpreter oftype CSVInterpreter {
+            enclosing: '"';
+        }
+
+        //Only the columns stop_id, stop_name, stop_lat, stop_lon, zone_id with fitting data types
+        block GTFSTableInterpreter oftype TableInterpreter {
+            header: true;
+            columns: [
+                "stop_id" oftype integer,
+                "stop_name" oftype text,
+                "stop_lat" oftype GeoCoordinates,
+                "stop_lon" oftype GeoCoordinates,
+                "zone_id" oftype ZoneID,
+            ];
+        }
+
+
+        // Write data into a SQLite database called “gtfs.sqlite”, in the table “stops”
+        block GTFSLoader oftype SQLiteLoader {
+            table: "stops";
+            file: "./gtfs.sqlite";
+        }
+        // Filter data: Only keep stops from zone 1925  
+        valuetype ZoneID oftype integer {
+            constraints: [ StartingZone ];
+        }
+        
+        // Validate data: stop_lat/stop_lon must be a geographic coordinates between -90 and 90, including upper/lower bounds
+        valuetype GeoCoordinates oftype decimal {
+            constraints: [ UpperAndLower ];
+        }
+        // Filter data: Only keep stops from zone 1925  
+        constraint StartingZone on integer:
+            value == 1925;
+
+        // Validate data: stop_lat/stop_lon must be a geographic coordinates between -90 and 90, including upper/lower bounds
+        constraint UpperAndLower oftype RangeConstraint {
+            lowerBound: -90;
+            lowerBoundInclusive: true;
+            upperBound: 90;
+            upperBoundInclusive: true;
+        }
+
+
+
+}
