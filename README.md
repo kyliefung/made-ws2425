@@ -26,8 +26,7 @@ By comparing data from both types of states, we aim to identify patterns, offeri
 <img width="400" alt="ETL Pipeline" src="https://github.com/user-attachments/assets/106e1dd1-cee5-4028-b7da-abf18a91d1e6" />
 
 ## Data Analysis
-The correlation among firearm permit, firearm-related crimes across different states is shown below.
-More Information can be reviewed in analysis-report.pdf. 
+- The correlation among firearm permit, firearm-related crimes across different states is shown below. More Information can be reviewed in analysis-report.pdf. 
 <img width="808" alt="data-analysis" src="https://github.com/user-attachments/assets/42fefc9d-bdcb-4c26-8068-95659fa2eb80" />
 
 
