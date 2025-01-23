@@ -1,4 +1,6 @@
 # Comparative Analysis of Firearm Ownership and Crime Rates Across U.S. States
+![gun-ownership](https://github.com/user-attachments/assets/b370c15f-59ff-45ff-8b9c-7da7db1b5992)
+(Picture downloaded from: https://matadornetwork.com/read/mapped-gun-ownership-us/)
 
 ## Project Description
 Firearm ownership is always a controversial topic in the United States, where the right to bear arms is protected by the Constitution. However, individual states vary greatly in the regulations they impose on firearm ownership. The strict states typically require more extensive processes and tests to obtain firearm permits. This project analyses the correlation between firearm ownership, regulation strictness, and crime rates across various U.S. states. States like “California”, “Massachusetts” and “New York” have strict regulations, while “Texas”, “Alaska” and “Wyoming” are more lenient.
